@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Queen's Decree</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --queen-red: #cc0000;
+            --ink-black: #000000;
+            --pure-white: #ffffff;
+            --off-white: #f4f4f4;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--pure-white);
+            font-family: 'Cinzel Decorative', serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #checker-vortex {
+            position: fixed;
+            top: 50%; left: 50%;
+            width: 200vmax; height: 200vmax;
+            background: repeating-conic-gradient(from 0deg, 
+                var(--off-white) 0deg 30deg, 
+                var(--queen-red) 30deg 60deg);
+            transform: translate(-50%, -50%) perspective(500px) rotateX(45deg);
+            opacity: 0.12;
+            animation: slowSpin 60s infinite linear;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        #dust-layer {
+            position: fixed;
+            width: 100%; height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            background-image: radial-gradient(var(--ink-black) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.1;
+            animation: driftUp 80s linear infinite;
+        }
+
+        #gatekeeper-ui {
+            position: relative;
+            z-index: 100;
+            transition: transform 1.2s cubic-bezier(0.6, -0.28, 0.735, 0.045), opacity 1s;
+        }
+
+        .login-box {
+            background: var(--pure-white);
+            border: 10px solid var(--ink-black);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+        }
+
+        .login-box::after {
+            content: '';
+            position: absolute;
+            top: -15px; left: -15px; right: -15px; bottom: -15px;
+            border: 2px solid var(--queen-red);
+            pointer-events: none;
+        }
+
+        h1 {
+            color: var(--ink-black);
+            margin: 0 0 25px 0;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        input {
+            background: var(--off-white);
+            border: 2px solid var(--ink-black);
+            padding: 12px;
+            color: var(--ink-black);
+            font-size: 1.2rem;
+            font-family: inherit;
+            text-align: center;
+            width: 260px;
+            outline: none;
+        }
+
+        .unlock-btn {
+            background: var(--queen-red);
+            color: var(--pure-white);
+            border: none;
+            padding: 15px 45px;
+            font-size: 1rem;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 30px;
+            text-transform: uppercase;
+            transition: background 0.2s;
+        }
+
+        .unlock-btn:hover { background: var(--ink-black); }
+
+        #rabbit-hole {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: none;
+            z-index: 50;
+        }
+
+        .falling-obj {
+            position: absolute;
+            font-size: 3rem;
+            color: var(--queen-red);
+            user-select: none;
+            will-change: transform;
+        }
+
+        #blackout {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--ink-black);
+            z-index: 500;
+            display: none;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+        }
+
+        #final-reveal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 600;
+            display: none;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            color: var(--pure-white);
+        }
+
+        .phrase { font-size: 4rem; font-style: italic; }
+        .number { font-size: 15rem; font-weight: bold; color: var(--queen-red); }
+
+        @keyframes slowSpin { 100% { transform: translate(-50%, -50%) perspective(500px) rotateX(45deg) rotate(360deg); } }
+        @keyframes driftUp { 100% { background-position: 0 -1000px; } }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-10px); }
+            80% { transform: translateX(10px); }
+        }
+
+        .exit { transform: scale(0) rotate(-45deg); opacity: 0; }
+    </style>
+</head>
+<body>
+
+    <div id="checker-vortex"></div>
+    <div id="dust-layer"></div>
+
+    <div id="gatekeeper-ui">
+        <div class="login-box">
+            <h1>The Queen's Decree</h1>
+            <input type="password" id="pass-input" placeholder="PASSCODE">
+            <br>
+            <button class="unlock-btn" onclick="verifyEntry()">Unlock</button>
+        </div>
+    </div>
+
+    <div id="rabbit-hole"></div>
+    <div id="blackout"></div>
+
+    <div id="final-reveal">
+        <div class="phrase">Of this world</div>
+        <div class="number">2</div>
+    </div>
+
+    <script>
+
+        function getSecret() {
+            const sequence = [51, 66, 89, 71, 51, 68, 72, 54, 81, 108, 69, 48, 90, 56, 80];
+            return sequence.map(code => String.fromCharCode(code)).join('');
+        }
+
+        function verifyEntry() {
+            const input = document.getElementById('pass-input');
+            const ui = document.getElementById('gatekeeper-ui');
+
+            if (input.value === getSecret()) {
+                startWonderland();
+            } else {
+                ui.style.animation = "shake 0.4s ease";
+                input.value = "";
+                setTimeout(() => { ui.style.animation = ""; }, 400);
+            }
+        }
+
+        function startWonderland() {
+            document.getElementById('gatekeeper-ui').classList.add('exit');
+
+            const hole = document.getElementById('rabbit-hole');
+            hole.style.display = 'block';
+            
+            const icons = ['♥️','♦️','♠️','♣️','👑','🌹','🎩','🐇','🗝️'];
+            for (let i = 0; i < 90; i++) {
+                setTimeout(() => {
+                    const el = document.createElement('div');
+                    el.className = 'falling-obj';
+                    el.innerText = icons[Math.floor(Math.random() * icons.length)];
+                    el.style.left = Math.random() * 100 + "vw";
+                    el.style.top = "-100px";
+                    
+                    const duration = Math.random() * 2 + 2;
+                    el.style.transition = `transform ${duration}s linear, opacity ${duration}s`;
+                    hole.appendChild(el);
+
+                    setTimeout(() => {
+                        el.style.transform = `translateY(110vh) rotate(${Math.random() * 720}deg)`;
+                        el.style.opacity = "0";
+                    }, 50);
+
+                    setTimeout(() => el.remove(), duration * 1000);
+                }, i * 60);
+            }
+
+            setTimeout(() => {
+                const dark = document.getElementById('blackout');
+                dark.style.display = 'block';
+                setTimeout(() => { dark.style.opacity = '1'; }, 50);
+
+                setTimeout(() => {
+                    document.getElementById('final-reveal').style.display = 'flex';
+                }, 1500);
+            }, 4500);
+        }
+    </script>
+</body>
+</html>
